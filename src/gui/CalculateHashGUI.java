@@ -18,7 +18,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
-import javax.xml.bind.DatatypeConverter;
 
 public class CalculateHashGUI extends javax.swing.JFrame {
 
@@ -32,7 +31,7 @@ public class CalculateHashGUI extends javax.swing.JFrame {
     
     private void setFile(){
         String path = file.getName();
-        label_filename.setText(path);
+        label_filename.setText(" " + path);
         long filesize = file.length();
         int maximum = (int) (filesize / bufferSize);
         if(filesize % bufferSize != 0){
@@ -79,8 +78,10 @@ public class CalculateHashGUI extends javax.swing.JFrame {
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Hash Calculator");
         setIconImage(new ImageIcon(getClass().getResource("/img/icon.png")).getImage());
-        setMinimumSize(new java.awt.Dimension(400, 300));
+        setMinimumSize(new java.awt.Dimension(600, 400));
+        setPreferredSize(new java.awt.Dimension(600, 400));
         setResizable(false);
+        getContentPane().setLayout(new java.awt.BorderLayout());
 
         toolbar.setFloatable(false);
 
@@ -98,7 +99,7 @@ public class CalculateHashGUI extends javax.swing.JFrame {
         });
         toolbar.add(btn_chooseFile);
 
-        label_filename.setMaximumSize(new java.awt.Dimension(270, 25));
+        label_filename.setMaximumSize(new java.awt.Dimension(30000, 25));
         label_filename.setMinimumSize(new java.awt.Dimension(270, 25));
         label_filename.setPreferredSize(new java.awt.Dimension(270, 25));
         toolbar.add(label_filename);
@@ -108,6 +109,8 @@ public class CalculateHashGUI extends javax.swing.JFrame {
         toolbar_progress.setFloatable(false);
 
         cb_hashAlgorithm.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "MD2", "MD5", "SHA-1", "SHA-224", "SHA-256", "SHA-512" }));
+        cb_hashAlgorithm.setLightWeightPopupEnabled(false);
+        cb_hashAlgorithm.setMaximumSize(new java.awt.Dimension(200, 30));
         cb_hashAlgorithm.setMinimumSize(new java.awt.Dimension(100, 30));
         cb_hashAlgorithm.setPreferredSize(new java.awt.Dimension(100, 30));
         toolbar_progress.add(cb_hashAlgorithm);
@@ -115,9 +118,9 @@ public class CalculateHashGUI extends javax.swing.JFrame {
         btn_calculate.setText("Calculate");
         btn_calculate.setFocusable(false);
         btn_calculate.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
-        btn_calculate.setMaximumSize(new java.awt.Dimension(66, 30));
-        btn_calculate.setMinimumSize(new java.awt.Dimension(66, 30));
-        btn_calculate.setPreferredSize(new java.awt.Dimension(66, 30));
+        btn_calculate.setMaximumSize(new java.awt.Dimension(150, 30));
+        btn_calculate.setMinimumSize(new java.awt.Dimension(150, 30));
+        btn_calculate.setPreferredSize(new java.awt.Dimension(150, 30));
         btn_calculate.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
         btn_calculate.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -126,9 +129,12 @@ public class CalculateHashGUI extends javax.swing.JFrame {
         });
         toolbar_progress.add(btn_calculate);
 
-        progress.setMaximumSize(new java.awt.Dimension(230, 25));
-        progress.setMinimumSize(new java.awt.Dimension(230, 25));
-        progress.setPreferredSize(new java.awt.Dimension(230, 25));
+        progress.setBackground(new java.awt.Color(156, 156, 156));
+        progress.setFont(new java.awt.Font("Ubuntu", 1, 16)); // NOI18N
+        progress.setForeground(new java.awt.Color(217, 254, 46));
+        progress.setMaximumSize(new java.awt.Dimension(32000, 30));
+        progress.setMinimumSize(new java.awt.Dimension(350, 30));
+        progress.setPreferredSize(new java.awt.Dimension(350, 30));
         progress.setStringPainted(true);
         toolbar_progress.add(progress);
 
@@ -158,7 +164,8 @@ public class CalculateHashGUI extends javax.swing.JFrame {
     public static void main(String args[]) {
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Windows".equals(info.getName())) {
+                System.out.println(info.getName());
+                if ("GTK+".equals(info.getName())) {
                     javax.swing.UIManager.setLookAndFeel(info.getClassName());
                     break;
                 }
@@ -181,25 +188,33 @@ public class CalculateHashGUI extends javax.swing.JFrame {
         }
     }
     
+    private String byteArrayToHex(byte[] byteArray) {
+        StringBuilder sb = new StringBuilder(byteArray.length * 2);
+        for (byte b: byteArray) {
+            sb.append(String.format("%02x", b));
+        }
+        return sb.toString();
+    }
+    
     private void calculateHash(){
         if(this.file != null){
             new Thread(() -> {
                 try {
                     progress.setValue(0);
-                    String algoritam = cb_hashAlgorithm.getSelectedItem().toString();
-                    MessageDigest md = MessageDigest.getInstance(algoritam);
-                    FileInputStream ulazniTokPodatakaDatoteke = new FileInputStream(file.getAbsoluteFile());
+                    String algorithm = cb_hashAlgorithm.getSelectedItem().toString();
+                    MessageDigest md = MessageDigest.getInstance(algorithm);
+                    FileInputStream inputStream = new FileInputStream(file.getAbsoluteFile());
                     byte[] buffer = new byte[bufferSize];
-                    int brojProcitanihBajtova;
-                    while((brojProcitanihBajtova = ulazniTokPodatakaDatoteke.read(buffer)) != -1){
-                        md.update(buffer, 0, brojProcitanihBajtova);
+                    int read;
+                    while((read = inputStream.read(buffer)) != -1){
+                        md.update(buffer, 0, read);
                         SwingUtilities.invokeLater(() -> {
                             progress.setValue(progress.getValue() + 1);
                         });
                     }
-                    byte[] hesBajtovi = md.digest();
-                    String hesVrednost = DatatypeConverter.printHexBinary(hesBajtovi).toLowerCase();
-                    log.setText("File: " + file.getName()+"\n"+algoritam + ": " + hesVrednost);
+                    byte[] hashBytes = md.digest();
+                    String hash = byteArrayToHex(hashBytes);
+                    log.setText("File: " + file.getName()+"\n"+algorithm + ": " + hash);
                 } catch (NoSuchAlgorithmException | IOException ex) {
                     Logger.getLogger(CalculateHashGUI.class.getName()).log(Level.SEVERE, null, ex);
                 }
